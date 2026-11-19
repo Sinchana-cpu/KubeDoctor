@@ -1,0 +1,22 @@
+# BROKEN ON PURPOSE: asks for 64 CPU cores, more than any node has (Pending).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hungry-batch
+  namespace: triage-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hungry-batch
+  template:
+    metadata:
+      labels:
+        app: hungry-batch
+    spec:
+      containers:
+        - name: batch
+          image: "nginx:1.27-alpine"
+          resources:
+            requests:
+              cpu: "64"

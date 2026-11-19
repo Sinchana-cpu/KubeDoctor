@@ -1,0 +1,21 @@
+# Healthy control workload (should NOT be flagged).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-ok
+  namespace: triage-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-ok
+  template:
+    metadata:
+      labels:
+        app: web-ok
+    spec:
+      containers:
+        - name: web
+          image: "nginx:1.27-alpine"
+          ports:
+            - containerPort: 80
