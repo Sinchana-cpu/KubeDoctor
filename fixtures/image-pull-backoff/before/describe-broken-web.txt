@@ -1,0 +1,41 @@
+Name:             broken-web-6b8b94c6f7-xk2qp
+Namespace:        triage-lab
+Priority:         0
+Node:             triage-lab-control-plane/172.18.0.2
+Start Time:       Thu, 19 Nov 2026 10:00:00 +0000
+Labels:           app=broken-web
+                  pod-template-hash=6b8b94c6f7
+Status:           Pending
+IP:               10.244.0.122
+Controlled By:    ReplicaSet/broken-web-6b8b94c6f7
+Containers:
+  web:
+    Container ID:
+    Image:          nginx:99.99-definitely-missing
+    Image ID:
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+    Restart Count:  0
+    Environment:    <none>
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+QoS Class:        Burstable
+Node-Selectors:   <none>
+Tolerations:      node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                  node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  3m                 default-scheduler  Successfully assigned triage-lab/broken-web-6b8b94c6f7-xk2qp to triage-lab-control-plane
+  Normal   Pulling    78s (x4 over 3m)   kubelet            Pulling image "nginx:99.99-definitely-missing"
+  Warning  Failed     77s (x4 over 3m)   kubelet            Failed to pull image "nginx:99.99-definitely-missing": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/nginx:99.99-definitely-missing": failed to resolve reference "docker.io/library/nginx:99.99-definitely-missing": docker.io/library/nginx:99.99-definitely-missing: not found
+  Warning  Failed     77s (x4 over 3m)   kubelet            Error: ErrImagePull
+  Normal   BackOff    9s (x11 over 3m)   kubelet            Back-off pulling image "nginx:99.99-definitely-missing"
+  Warning  Failed     9s (x11 over 3m)   kubelet            Error: ImagePullBackOff

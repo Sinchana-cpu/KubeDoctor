@@ -1,0 +1,50 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "leaky-worker",
+    "namespace": "triage-lab"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "leaky-worker"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "leaky-worker"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "worker",
+            "image": "polinux/stress",
+            "command": [
+              "stress"
+            ],
+            "args": [
+              "--vm",
+              "1",
+              "--vm-bytes",
+              "150M",
+              "--vm-hang",
+              "1"
+            ],
+            "resources": {
+              "requests": {
+                "memory": "50Mi"
+              },
+              "limits": {
+                "memory": "100Mi"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

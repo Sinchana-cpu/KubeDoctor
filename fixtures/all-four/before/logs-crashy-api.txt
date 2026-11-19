@@ -1,0 +1,2 @@
+crashy-api starting
+FATAL: required environment variable APP_MODE is not set

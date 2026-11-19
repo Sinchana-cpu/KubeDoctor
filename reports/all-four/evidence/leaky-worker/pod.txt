@@ -1,0 +1,33 @@
+symptom: OOMKilled
+detail: container 'worker' was killed for exceeding its memory limit (exit 137, 4 restarts)
+{
+ "phase": "Running",
+ "conditions": [
+  {
+   "type": "Ready",
+   "status": "False"
+  }
+ ],
+ "containerStatuses": [
+  {
+   "name": "worker",
+   "ready": false,
+   "restartCount": 4,
+   "image": "polinux/stress",
+   "state": {
+    "waiting": {
+     "reason": "CrashLoopBackOff",
+     "message": "back-off 2m40s restarting failed container=worker"
+    }
+   },
+   "lastState": {
+    "terminated": {
+     "exitCode": 137,
+     "reason": "OOMKilled",
+     "startedAt": "2026-11-19T10:00:00Z",
+     "finishedAt": "2026-11-19T10:00:00Z"
+    }
+   }
+  }
+ ]
+}

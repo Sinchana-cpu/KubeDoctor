@@ -1,0 +1,198 @@
+{
+  "schema": "k8s-triage-action-log/2",
+  "tool_version": "2.0.0",
+  "started": "2026-11-19T12:42:40+00:00",
+  "finished": "2026-11-19T12:42:40+00:00",
+  "mode": "replay",
+  "scenario": "crashloop-missing-env",
+  "context": "recorded-fixture (no live cluster)",
+  "namespace": "triage-lab",
+  "safety": {
+    "read_only_verbs": [
+      "describe",
+      "get",
+      "logs",
+      "top",
+      "rollout status",
+      "rollout history"
+    ],
+    "secrets_never_read": true,
+    "only_mutation": "kubectl patch deployment (server dry run first, then only after approval)"
+  },
+  "summary": {
+    "pods_seen": 1,
+    "unhealthy_workloads": 1,
+    "read_commands": 5,
+    "mutations": 0,
+    "recovered": 0
+  },
+  "workloads": [
+    {
+      "workload": "triage-lab/crashy-api",
+      "symptom": "CrashLoopBackOff",
+      "runbook_rule": "crash-missing-config",
+      "confidence": "High",
+      "patch_file": "proposed-fixes/crashy-api.yaml",
+      "approval": "not applicable - recorded mode never applies patches",
+      "patch_applied": false,
+      "verification": "not run",
+      "outcome": "Fix proposed (not applied)"
+    }
+  ],
+  "entries": [
+    {
+      "seq": 1,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "start",
+      "kind": "info",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "Triage of namespace 'triage-lab'; read-only diagnostics, mutations only after approval.",
+      "exit_code": null,
+      "result": "context=recorded-fixture (no live cluster); evidence source=recorded-fixture"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "-",
+      "command": "kubectl get pods -n triage-lab -o json",
+      "rationale": "Find pods that are not healthy by reading every pod's status.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "e527cd1569b1b8ba7bacb7af5a1555f9adba7d34e1a027cc7cdbe93ece50f09c",
+      "output_excerpt": "{\n  \"apiVersion\": \"v1\",\n  \"kind\": \"List\",\n  \"items\": [\n    {\n      \"apiVersion\": \"v1\",\n      \"kind\": \"Pod\",\n      \"metadata\": {\n        \"name\": \"crashy-api-7f9d6c5b8d-q4w8z\",\n        \"namespace\": \"triage-lab\",\n        \"creationTimestamp\": \"2026-11-19T10:00:00Z\",\n        \"labels\": {\n          \"app\": \"crashy-api\",\n          \"pod-template-hash\": \"7f9d6c5b8d\"\n        },\n        \"ownerReferences\": [\n  "
+    },
+    {
+      "seq": 3,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "1 pod(s) read; 1 unhealthy workload(s) found.",
+      "exit_code": null,
+      "result": "triage-lab/crashy-api=CrashLoopBackOff"
+    },
+    {
+      "seq": 4,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/crashy-api",
+      "command": "kubectl describe pod crashy-api-7f9d6c5b8d-q4w8z -n triage-lab",
+      "rationale": "'describe' is the richest single view of a pod: status, last exit code, resource limits and its Events.",
+      "exit_code": 0,
+      "result": "ok: Name:             crashy-api-7f9d6c5b8d-q4w8z",
+      "output_sha256": "70cae2e90af0b122b25d3628f7b654600df7e058560d41c89c8f437ed8a204f5",
+      "output_excerpt": "Name:             crashy-api-7f9d6c5b8d-q4w8z\nNamespace:        triage-lab\nPriority:         0\nNode:             triage-lab-control-plane/172.18.0.2\nStart Time:       Thu, 19 Nov 2026 10:00:00 +0000\nLabels:           app=crashy-api\n                  pod-template-hash=7f9d6c5b8d\nStatus:           Running\nIP:               10.244.0.72\nControlled By:    ReplicaSet/crashy-api-7f9d6c5b8d\nContainers:\n  "
+    },
+    {
+      "seq": 5,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/crashy-api",
+      "command": "kubectl get events -n triage-lab --field-selector involvedObject.name=crashy-api-7f9d6c5b8d-q4w8z --sort-by=.lastTimestamp",
+      "rationale": "Events show what the cluster itself observed (scheduling, pulling, restarting) in time order.",
+      "exit_code": 0,
+      "result": "ok: LAST SEEN   TYPE      REASON      OBJECT                         MESSAGE",
+      "output_sha256": "1d8748ef4904e5817025692f01e8ab8d51a79c1b3ece50db1c4d8ed50c6298f7",
+      "output_excerpt": "LAST SEEN   TYPE      REASON      OBJECT                         MESSAGE\n5m          Normal    Scheduled   pod/crashy-api-7f9d6c5b8d-q4w8z   Successfully assigned triage-lab/crashy-api-7f9d6c5b8d-q4w8z to triage-lab-control-plane\n2m          Normal    Started     pod/crashy-api-7f9d6c5b8d-q4w8z   Started container api\n10s         Warning   BackOff     pod/crashy-api-7f9d6c5b8d-q4w8z   Back-off res"
+    },
+    {
+      "seq": 6,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/crashy-api",
+      "command": "",
+      "rationale": "Leading hypothesis: crash-missing-config (3/8). Next check: logs_previous.",
+      "exit_code": null,
+      "result": ""
+    },
+    {
+      "seq": 7,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/crashy-api",
+      "command": "kubectl logs crashy-api-7f9d6c5b8d-q4w8z -n triage-lab -c api --tail=50 --previous",
+      "rationale": "The container restarts, so the log of the PREVIOUS run holds the crash message.",
+      "exit_code": 0,
+      "result": "ok: crashy-api starting",
+      "output_sha256": "5a491bacbf19e6db261435b6f19c721566686a586c8026b4003d91f6bc7f8a48",
+      "output_excerpt": "crashy-api starting\nFATAL: required environment variable APP_MODE is not set"
+    },
+    {
+      "seq": 8,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/crashy-api",
+      "command": "",
+      "rationale": "Leading hypothesis: crash-missing-config (8/8). Next check: deployment.",
+      "exit_code": null,
+      "result": ""
+    },
+    {
+      "seq": 9,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/crashy-api",
+      "command": "kubectl get deployment crashy-api -n triage-lab -o json",
+      "rationale": "Read the Deployment's current env so the patch adds only what is missing.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "8480381fcae1f65500a4d011ec6522a1c11148ec8e4de0a2955b5826908e6f4a",
+      "output_excerpt": "{\n  \"apiVersion\": \"apps/v1\",\n  \"kind\": \"Deployment\",\n  \"metadata\": {\n    \"name\": \"crashy-api\",\n    \"namespace\": \"triage-lab\"\n  },\n  \"spec\": {\n    \"replicas\": 1,\n    \"selector\": {\n      \"matchLabels\": {\n        \"app\": \"crashy-api\"\n      }\n    },\n    \"template\": {\n      \"metadata\": {\n        \"labels\": {\n          \"app\": \"crashy-api\"\n        }\n      },\n      \"spec\": {\n        \"containers\": [\n        "
+    },
+    {
+      "seq": 10,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "diagnose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/crashy-api",
+      "command": "",
+      "rationale": "Matched runbook rule 'crash-missing-config' (score 8/8, confidence High).",
+      "exit_code": null,
+      "result": "App exits at startup because a required setting is missing"
+    },
+    {
+      "seq": 11,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/crashy-api",
+      "command": "",
+      "rationale": "Add the missing environment variable to the container.",
+      "exit_code": null,
+      "result": "container 'api' env APP_MODE: (not set) -> staging"
+    },
+    {
+      "seq": 12,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/crashy-api",
+      "command": "",
+      "rationale": "Recorded mode: patch is shown for review only; no cluster exists to change.",
+      "exit_code": null,
+      "result": ""
+    }
+  ]
+}

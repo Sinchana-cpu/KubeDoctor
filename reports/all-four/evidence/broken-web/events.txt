@@ -1,0 +1,7 @@
+LAST SEEN   TYPE      REASON      OBJECT                                MESSAGE
+3m          Normal    Scheduled   pod/broken-web-6b8b94c6f7-xk2qp   Successfully assigned triage-lab/broken-web-6b8b94c6f7-xk2qp to triage-lab-control-plane
+77s         Warning   Failed      pod/broken-web-6b8b94c6f7-xk2qp   Failed to pull image "nginx:99.99-definitely-missing": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/nginx:99.99-definitely-missing": failed to resolve reference "docker.io/library/nginx:99.99-definitely-missing": docker.io/library/nginx:99.99-definitely-missing: not found
+77s         Warning   Failed      pod/broken-web-6b8b94c6f7-xk2qp   Error: ErrImagePull
+9s          Normal    BackOff     pod/broken-web-6b8b94c6f7-xk2qp   Back-off pulling image "nginx:99.99-definitely-missing"
+9s          Warning   Failed      pod/broken-web-6b8b94c6f7-xk2qp   Error: ImagePullBackOff
+

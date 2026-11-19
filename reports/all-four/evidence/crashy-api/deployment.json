@@ -1,0 +1,36 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "crashy-api",
+    "namespace": "triage-lab"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "crashy-api"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "crashy-api"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "api",
+            "image": "busybox:1.36",
+            "command": [
+              "sh",
+              "-c",
+              "echo \"crashy-api starting\"; if [ -z \"$APP_MODE\" ]; then echo \"FATAL: required environment variable APP_MODE is not set\"; exit 1; fi; echo \"running in $APP_MODE mode\"; sleep 3600"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
