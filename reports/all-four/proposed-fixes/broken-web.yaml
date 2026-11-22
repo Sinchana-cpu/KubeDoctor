@@ -1,0 +1,9 @@
+# Proposed fix for deployment/broken-web in namespace triage-lab
+# Rule: image-not-found. Review before applying:
+# kubectl patch deployment broken-web -n triage-lab --type strategic --patch-file proposed-fixes/broken-web.yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: web
+          image: "nginx:1.27-alpine"

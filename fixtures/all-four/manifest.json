@@ -1,0 +1,29 @@
+{
+  "scenario": "all-four",
+  "description": "Four broken Deployments plus one healthy one in a single namespace.",
+  "context": "recorded-fixture (no live cluster)",
+  "namespace": "triage-lab",
+  "commands": {
+    "get pods -n triage-lab -o json": "before/pods.json",
+    "get pods -A -o json": "before/pods.json",
+    "get nodes -o json": "before/nodes.json",
+    "describe pod broken-web-6b8b94c6f7-xk2qp -n triage-lab": "before/describe-broken-web.txt",
+    "get events -n triage-lab --field-selector involvedObject.name=broken-web-6b8b94c6f7-xk2qp --sort-by=.lastTimestamp": "before/events-broken-web.txt",
+    "get deployment broken-web -n triage-lab -o json": "before/deployment-broken-web.json",
+    "get pods -n triage-lab -l app=broken-web -o json": "before/selector-broken-web.json",
+    "describe pod crashy-api-7f9d6c5b8d-q4w8z -n triage-lab": "before/describe-crashy-api.txt",
+    "get events -n triage-lab --field-selector involvedObject.name=crashy-api-7f9d6c5b8d-q4w8z --sort-by=.lastTimestamp": "before/events-crashy-api.txt",
+    "logs crashy-api-7f9d6c5b8d-q4w8z -n triage-lab -c api --tail=50 --previous": "before/logs-crashy-api.txt",
+    "get deployment crashy-api -n triage-lab -o json": "before/deployment-crashy-api.json",
+    "get pods -n triage-lab -l app=crashy-api -o json": "before/selector-crashy-api.json",
+    "describe pod leaky-worker-5c7d9b6f44-n8x5t -n triage-lab": "before/describe-leaky-worker.txt",
+    "get events -n triage-lab --field-selector involvedObject.name=leaky-worker-5c7d9b6f44-n8x5t --sort-by=.lastTimestamp": "before/events-leaky-worker.txt",
+    "logs leaky-worker-5c7d9b6f44-n8x5t -n triage-lab -c worker --tail=50 --previous": "before/logs-leaky-worker.txt",
+    "get deployment leaky-worker -n triage-lab -o json": "before/deployment-leaky-worker.json",
+    "get pods -n triage-lab -l app=leaky-worker -o json": "before/selector-leaky-worker.json",
+    "describe pod hungry-batch-84c6f5d7b9-v6m2c -n triage-lab": "before/describe-hungry-batch.txt",
+    "get events -n triage-lab --field-selector involvedObject.name=hungry-batch-84c6f5d7b9-v6m2c --sort-by=.lastTimestamp": "before/events-hungry-batch.txt",
+    "get deployment hungry-batch -n triage-lab -o json": "before/deployment-hungry-batch.json",
+    "get pods -n triage-lab -l app=hungry-batch -o json": "before/selector-hungry-batch.json"
+  }
+}

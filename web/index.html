@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e1a2f">
+<title>KubeDoctor · Kubernetes workload triage</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f5bd8'/%3E%3Cpath d='M16 7v18M7 16h18' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#view">Skip to content</a>
+<div class="shell">
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" href="#/overview">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 7v18M7 16h18" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg></span>
+      <span><b>KubeDoctor</b><small>Workload triage</small></span>
+    </a>
+    <nav id="nav">
+      <a class="nav-item" href="#/overview" data-page="overview"><span data-icon="grid"></span>Overview</a>
+      <a class="nav-item" href="#/investigations" data-page="investigations"><span data-icon="search"></span>Investigations<em id="nav-count" class="nav-count" hidden></em></a>
+      <a class="nav-item" href="#/logs" data-page="logs"><span data-icon="terminal"></span>Log analyzer</a>
+      <a class="nav-item" href="#/runbooks" data-page="runbooks"><span data-icon="book"></span>Runbooks</a>
+      <a class="nav-item" href="#/history" data-page="history"><span data-icon="clock"></span>History</a>
+      <a class="nav-item" href="#/safety" data-page="safety"><span data-icon="shield"></span>Safety &amp; setup</a>
+    </nav>
+    <div class="side-foot">
+      <div class="guard"><span data-icon="shield"></span><div><b>Read-only</b><small>No change is ever applied from the browser</small></div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menu-btn" aria-label="Open menu"><span data-icon="menu"></span></button>
+      <label class="scenario-pick">
+        <span>Snapshot</span>
+        <select id="scenario-select" aria-label="Choose a recorded snapshot"></select>
+      </label>
+      <span class="mode-chip" id="mode-chip" tabindex="0" aria-describedby="mode-tip"><i></i>Replay mode<span class="tip" id="mode-tip" role="tooltip">Reads recorded <code>kubectl</code> output from the <code>fixtures/</code> folder. No cluster is contacted.</span></span>
+      <div class="top-actions">
+        <button class="btn ghost" id="palette-btn" aria-label="Open command palette"><span data-icon="command"></span>Search <kbd>Ctrl K</kbd></button>
+        <button class="btn primary" id="run-btn"><span data-icon="play"></span>Run investigation</button>
+      </div>
+    </header>
+    <div id="view" class="view" tabindex="-1"><div class="loading"><span class="spinner"></span>Loading snapshot…</div></div>
+  </main>
+</div>
+
+<div class="palette-wrap" id="palette" hidden>
+  <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+    <input id="palette-input" type="text" placeholder="Jump to a page, workload or snapshot…" autocomplete="off" aria-label="Search commands">
+    <ul id="palette-list" role="listbox"></ul>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/app.js"></script>
+</body>
+</html>

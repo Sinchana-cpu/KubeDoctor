@@ -1,0 +1,11 @@
+# Proposed fix for deployment/hungry-batch in namespace triage-lab
+# Rule: pending-insufficient-resources. Review before applying:
+# kubectl patch deployment hungry-batch -n triage-lab --type strategic --patch-file proposed-fixes/hungry-batch.yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: batch
+          resources:
+            requests:
+              cpu: "800m"

@@ -1,0 +1,198 @@
+{
+  "schema": "k8s-triage-action-log/2",
+  "tool_version": "2.0.0",
+  "started": "2026-11-19T12:42:40+00:00",
+  "finished": "2026-11-19T12:42:40+00:00",
+  "mode": "replay",
+  "scenario": "oomkilled",
+  "context": "recorded-fixture (no live cluster)",
+  "namespace": "triage-lab",
+  "safety": {
+    "read_only_verbs": [
+      "describe",
+      "get",
+      "logs",
+      "top",
+      "rollout status",
+      "rollout history"
+    ],
+    "secrets_never_read": true,
+    "only_mutation": "kubectl patch deployment (server dry run first, then only after approval)"
+  },
+  "summary": {
+    "pods_seen": 1,
+    "unhealthy_workloads": 1,
+    "read_commands": 5,
+    "mutations": 0,
+    "recovered": 0
+  },
+  "workloads": [
+    {
+      "workload": "triage-lab/leaky-worker",
+      "symptom": "OOMKilled",
+      "runbook_rule": "oom-killed",
+      "confidence": "High",
+      "patch_file": "proposed-fixes/leaky-worker.yaml",
+      "approval": "not applicable - recorded mode never applies patches",
+      "patch_applied": false,
+      "verification": "not run",
+      "outcome": "Fix proposed (not applied)"
+    }
+  ],
+  "entries": [
+    {
+      "seq": 1,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "start",
+      "kind": "info",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "Triage of namespace 'triage-lab'; read-only diagnostics, mutations only after approval.",
+      "exit_code": null,
+      "result": "context=recorded-fixture (no live cluster); evidence source=recorded-fixture"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "-",
+      "command": "kubectl get pods -n triage-lab -o json",
+      "rationale": "Find pods that are not healthy by reading every pod's status.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "dd67c04dad12c9399eaa0859df23871ed44261b313278b7aa23eea7a257e8c1e",
+      "output_excerpt": "{\n  \"apiVersion\": \"v1\",\n  \"kind\": \"List\",\n  \"items\": [\n    {\n      \"apiVersion\": \"v1\",\n      \"kind\": \"Pod\",\n      \"metadata\": {\n        \"name\": \"leaky-worker-5c7d9b6f44-n8x5t\",\n        \"namespace\": \"triage-lab\",\n        \"creationTimestamp\": \"2026-11-19T10:00:00Z\",\n        \"labels\": {\n          \"app\": \"leaky-worker\",\n          \"pod-template-hash\": \"5c7d9b6f44\"\n        },\n        \"ownerReferences\": "
+    },
+    {
+      "seq": 3,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "1 pod(s) read; 1 unhealthy workload(s) found.",
+      "exit_code": null,
+      "result": "triage-lab/leaky-worker=OOMKilled"
+    },
+    {
+      "seq": 4,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/leaky-worker",
+      "command": "kubectl describe pod leaky-worker-5c7d9b6f44-n8x5t -n triage-lab",
+      "rationale": "'describe' is the richest single view of a pod: status, last exit code, resource limits and its Events.",
+      "exit_code": 0,
+      "result": "ok: Name:             leaky-worker-5c7d9b6f44-n8x5t",
+      "output_sha256": "737c3ae5480fc64b1a45e06ccbf6466912c0b0282c916a75a706dd75da69c7f7",
+      "output_excerpt": "Name:             leaky-worker-5c7d9b6f44-n8x5t\nNamespace:        triage-lab\nPriority:         0\nNode:             triage-lab-control-plane/172.18.0.2\nStart Time:       Thu, 19 Nov 2026 10:00:00 +0000\nLabels:           app=leaky-worker\n                  pod-template-hash=5c7d9b6f44\nStatus:           Running\nIP:               10.244.0.176\nControlled By:    ReplicaSet/leaky-worker-5c7d9b6f44\nContain"
+    },
+    {
+      "seq": 5,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/leaky-worker",
+      "command": "kubectl get events -n triage-lab --field-selector involvedObject.name=leaky-worker-5c7d9b6f44-n8x5t --sort-by=.lastTimestamp",
+      "rationale": "Events show what the cluster itself observed (scheduling, pulling, restarting) in time order.",
+      "exit_code": 0,
+      "result": "ok: LAST SEEN   TYPE      REASON      OBJECT                            MESSAGE",
+      "output_sha256": "c9b53d0e91ecbfd4982b862968bf85257ce870288236f6b93a4ed4cfc7da2672",
+      "output_excerpt": "LAST SEEN   TYPE      REASON      OBJECT                            MESSAGE\n4m          Normal    Scheduled   pod/leaky-worker-5c7d9b6f44-n8x5t   Successfully assigned triage-lab/leaky-worker-5c7d9b6f44-n8x5t to triage-lab-control-plane\n90s         Normal    Started     pod/leaky-worker-5c7d9b6f44-n8x5t   Started container worker\n8s          Warning   BackOff     pod/leaky-worker-5c7d9b6f44-n8x5t "
+    },
+    {
+      "seq": 6,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/leaky-worker",
+      "command": "",
+      "rationale": "Leading hypothesis: oom-killed (9/9). Next check: logs_previous.",
+      "exit_code": null,
+      "result": ""
+    },
+    {
+      "seq": 7,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/leaky-worker",
+      "command": "kubectl logs leaky-worker-5c7d9b6f44-n8x5t -n triage-lab -c worker --tail=50 --previous",
+      "rationale": "The previous run's log shows what the app was doing when it was killed (often just stops, with no error).",
+      "exit_code": 0,
+      "result": "ok: stress: info: [1] dispatching hogs: 0 cpu, 0 io, 1 vm, 0 hdd",
+      "output_sha256": "238aaccbd2a267162dacca248d181e8ffd387897c14cf0b031e9f574149ab01e",
+      "output_excerpt": "stress: info: [1] dispatching hogs: 0 cpu, 0 io, 1 vm, 0 hdd"
+    },
+    {
+      "seq": 8,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/leaky-worker",
+      "command": "",
+      "rationale": "Leading hypothesis: oom-killed (9/9). Next check: deployment.",
+      "exit_code": null,
+      "result": ""
+    },
+    {
+      "seq": 9,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/leaky-worker",
+      "command": "kubectl get deployment leaky-worker -n triage-lab -o json",
+      "rationale": "Read the current memory limit so the new value can be computed from it.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "bf3c5629c6d1d844148f84ab825e36e34472bb9ec18cc8df6f2d5af7e9448e63",
+      "output_excerpt": "{\n  \"apiVersion\": \"apps/v1\",\n  \"kind\": \"Deployment\",\n  \"metadata\": {\n    \"name\": \"leaky-worker\",\n    \"namespace\": \"triage-lab\"\n  },\n  \"spec\": {\n    \"replicas\": 1,\n    \"selector\": {\n      \"matchLabels\": {\n        \"app\": \"leaky-worker\"\n      }\n    },\n    \"template\": {\n      \"metadata\": {\n        \"labels\": {\n          \"app\": \"leaky-worker\"\n        }\n      },\n      \"spec\": {\n        \"containers\": [\n  "
+    },
+    {
+      "seq": 10,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "diagnose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/leaky-worker",
+      "command": "",
+      "rationale": "Matched runbook rule 'oom-killed' (score 9/9, confidence High).",
+      "exit_code": null,
+      "result": "Container exceeded its memory limit (OOMKilled)"
+    },
+    {
+      "seq": 11,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/leaky-worker",
+      "command": "",
+      "rationale": "Raise the container's memory limit (doubled, capped).",
+      "exit_code": null,
+      "result": "container 'worker' resources.limits.memory: 100Mi -> 200Mi"
+    },
+    {
+      "seq": 12,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/leaky-worker",
+      "command": "",
+      "rationale": "Recorded mode: patch is shown for review only; no cluster exists to change.",
+      "exit_code": null,
+      "result": ""
+    }
+  ]
+}

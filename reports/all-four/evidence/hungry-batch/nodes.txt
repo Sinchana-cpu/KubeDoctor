@@ -1,0 +1,1 @@
+node triage-lab-control-plane: allocatable cpu=8, memory=16254636Ki

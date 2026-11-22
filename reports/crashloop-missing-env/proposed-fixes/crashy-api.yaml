@@ -1,0 +1,11 @@
+# Proposed fix for deployment/crashy-api in namespace triage-lab
+# Rule: crash-missing-config. Review before applying:
+# kubectl patch deployment crashy-api -n triage-lab --type strategic --patch-file proposed-fixes/crashy-api.yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: APP_MODE
+              value: staging

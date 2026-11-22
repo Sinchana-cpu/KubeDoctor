@@ -1,0 +1,330 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "broken-web-6b8b94c6f7-xk2qp",
+        "namespace": "triage-lab",
+        "creationTimestamp": "2026-11-19T10:00:00Z",
+        "labels": {
+          "app": "broken-web",
+          "pod-template-hash": "6b8b94c6f7"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "broken-web-6b8b94c6f7",
+            "controller": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "web",
+            "image": "nginx:99.99-definitely-missing",
+            "ports": [
+              {
+                "containerPort": 80
+              }
+            ]
+          }
+        ],
+        "nodeName": "triage-lab-control-plane"
+      },
+      "status": {
+        "phase": "Pending",
+        "conditions": [
+          {
+            "type": "PodScheduled",
+            "status": "True"
+          },
+          {
+            "type": "Ready",
+            "status": "False"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "web",
+            "ready": false,
+            "restartCount": 0,
+            "image": "nginx:99.99-definitely-missing",
+            "imageID": "",
+            "state": {
+              "waiting": {
+                "reason": "ImagePullBackOff",
+                "message": "Back-off pulling image \"nginx:99.99-definitely-missing\""
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "crashy-api-7f9d6c5b8d-q4w8z",
+        "namespace": "triage-lab",
+        "creationTimestamp": "2026-11-19T10:00:00Z",
+        "labels": {
+          "app": "crashy-api",
+          "pod-template-hash": "7f9d6c5b8d"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "crashy-api-7f9d6c5b8d",
+            "controller": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "api",
+            "image": "busybox:1.36",
+            "command": [
+              "sh",
+              "-c",
+              "echo \"crashy-api starting\"; if [ -z \"$APP_MODE\" ]; then echo \"FATAL: required environment variable APP_MODE is not set\"; exit 1; fi; echo \"running in $APP_MODE mode\"; sleep 3600"
+            ]
+          }
+        ],
+        "nodeName": "triage-lab-control-plane"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "False"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "api",
+            "ready": false,
+            "restartCount": 5,
+            "image": "busybox:1.36",
+            "state": {
+              "waiting": {
+                "reason": "CrashLoopBackOff",
+                "message": "back-off 2m40s restarting failed container=api"
+              }
+            },
+            "lastState": {
+              "terminated": {
+                "exitCode": 1,
+                "reason": "Error",
+                "startedAt": "2026-11-19T10:00:00Z",
+                "finishedAt": "2026-11-19T10:00:00Z"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "leaky-worker-5c7d9b6f44-n8x5t",
+        "namespace": "triage-lab",
+        "creationTimestamp": "2026-11-19T10:00:00Z",
+        "labels": {
+          "app": "leaky-worker",
+          "pod-template-hash": "5c7d9b6f44"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "leaky-worker-5c7d9b6f44",
+            "controller": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "worker",
+            "image": "polinux/stress",
+            "command": [
+              "stress"
+            ],
+            "args": [
+              "--vm",
+              "1",
+              "--vm-bytes",
+              "150M",
+              "--vm-hang",
+              "1"
+            ],
+            "resources": {
+              "requests": {
+                "memory": "50Mi"
+              },
+              "limits": {
+                "memory": "100Mi"
+              }
+            }
+          }
+        ],
+        "nodeName": "triage-lab-control-plane"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "False"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "worker",
+            "ready": false,
+            "restartCount": 4,
+            "image": "polinux/stress",
+            "state": {
+              "waiting": {
+                "reason": "CrashLoopBackOff",
+                "message": "back-off 2m40s restarting failed container=worker"
+              }
+            },
+            "lastState": {
+              "terminated": {
+                "exitCode": 137,
+                "reason": "OOMKilled",
+                "startedAt": "2026-11-19T10:00:00Z",
+                "finishedAt": "2026-11-19T10:00:00Z"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "hungry-batch-84c6f5d7b9-v6m2c",
+        "namespace": "triage-lab",
+        "creationTimestamp": "2026-11-19T10:00:00Z",
+        "labels": {
+          "app": "hungry-batch",
+          "pod-template-hash": "84c6f5d7b9"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "hungry-batch-84c6f5d7b9",
+            "controller": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "batch",
+            "image": "nginx:1.27-alpine",
+            "resources": {
+              "requests": {
+                "cpu": "64"
+              }
+            }
+          }
+        ],
+        "nodeName": ""
+      },
+      "status": {
+        "phase": "Pending",
+        "conditions": [
+          {
+            "type": "PodScheduled",
+            "status": "False",
+            "reason": "Unschedulable",
+            "message": "0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod."
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "web-ok-69c7d8f5b6-8gk2s",
+        "namespace": "triage-lab",
+        "creationTimestamp": "2026-11-19T10:00:00Z",
+        "labels": {
+          "app": "web-ok",
+          "pod-template-hash": "69c7d8f5b6"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "web-ok-69c7d8f5b6",
+            "controller": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "web",
+            "image": "nginx:1.27-alpine",
+            "ports": [
+              {
+                "containerPort": 80
+              }
+            ]
+          }
+        ],
+        "nodeName": "triage-lab-control-plane"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Initialized",
+            "status": "True"
+          },
+          {
+            "type": "Ready",
+            "status": "True"
+          },
+          {
+            "type": "ContainersReady",
+            "status": "True"
+          },
+          {
+            "type": "PodScheduled",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "web",
+            "ready": true,
+            "restartCount": 0,
+            "image": "nginx:1.27-alpine",
+            "state": {
+              "running": {
+                "startedAt": "2026-11-19T10:00:00Z"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

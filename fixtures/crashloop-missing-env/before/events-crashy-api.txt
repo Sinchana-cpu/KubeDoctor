@@ -1,0 +1,4 @@
+LAST SEEN   TYPE      REASON      OBJECT                         MESSAGE
+5m          Normal    Scheduled   pod/crashy-api-7f9d6c5b8d-q4w8z   Successfully assigned triage-lab/crashy-api-7f9d6c5b8d-q4w8z to triage-lab-control-plane
+2m          Normal    Started     pod/crashy-api-7f9d6c5b8d-q4w8z   Started container api
+10s         Warning   BackOff     pod/crashy-api-7f9d6c5b8d-q4w8z   Back-off restarting failed container api in pod crashy-api-7f9d6c5b8d-q4w8z_triage-lab(7c1d)

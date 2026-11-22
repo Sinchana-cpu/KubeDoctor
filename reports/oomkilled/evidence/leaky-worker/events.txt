@@ -1,0 +1,5 @@
+LAST SEEN   TYPE      REASON      OBJECT                            MESSAGE
+4m          Normal    Scheduled   pod/leaky-worker-5c7d9b6f44-n8x5t   Successfully assigned triage-lab/leaky-worker-5c7d9b6f44-n8x5t to triage-lab-control-plane
+90s         Normal    Started     pod/leaky-worker-5c7d9b6f44-n8x5t   Started container worker
+8s          Warning   BackOff     pod/leaky-worker-5c7d9b6f44-n8x5t   Back-off restarting failed container worker in pod leaky-worker-5c7d9b6f44-n8x5t_triage-lab(2b9e)
+

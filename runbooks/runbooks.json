@@ -1,0 +1,251 @@
+{
+  "version": 2,
+  "about": "Runbook knowledge base. Each rule lists the symptoms it applies to, weighted evidence signals (regex over a named evidence source), the read-only diagnostics worth running, a plain-language explanation, and a fix. fix.kind is one of: set_image, set_env, raise_memory_limit, reduce_request (the agent can draft a patch) or manual (guidance only). Add a rule here to teach the agent a new failure; no code change needed unless you add a new fix.kind.",
+  "rules": [
+    {
+      "id": "image-not-found",
+      "title": "Image or tag does not exist in the registry",
+      "symptoms": ["ImagePullBackOff", "ErrImagePull", "InvalidImageName"],
+      "signals": [
+        {"source": "pod", "pattern": "ImagePullBackOff|ErrImagePull", "weight": 2, "label": "Pod is stuck pulling its image"},
+        {"source": "events|describe", "pattern": "\\bnot found\\b|manifest unknown|manifest for \\S+ not found", "weight": 4, "label": "The registry answered 'not found' for this image or tag"},
+        {"source": "describe", "pattern": "Failed to pull image", "weight": 1, "label": "kubelet reported a pull failure"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "The Events section at the bottom of 'describe' shows the exact pull error and which image was requested."},
+        {"id": "events", "why": "Cluster events for this pod confirm how often the pull failed and the registry's message."},
+        {"id": "deployment", "why": "Read the owning Deployment so a patch can be drafted against its real container spec."}
+      ],
+      "plain_language": "Kubernetes tried to download the container image and the registry said it does not exist. Almost always this is a typo in the image name or tag, or a tag that was never published. The container never started, so there are no application logs to read.",
+      "why_it_happens": "Typos in the tag, a tag that was deleted or never pushed, or a CI pipeline that has not published the image yet.",
+      "fix": {
+        "kind": "set_image",
+        "summary": "Point the Deployment at an image tag that exists.",
+        "known_good": {"nginx": "nginx:1.27-alpine", "busybox": "busybox:1.36", "redis": "redis:7-alpine", "httpd": "httpd:2.4-alpine"}
+      },
+      "manual_steps": ["Check the tag exists: open the registry page for the image, or run 'docker manifest inspect <image>'.", "Correct the image in your Deployment YAML and re-apply it."],
+      "learn": "Read 'kubectl describe pod' from the bottom up: the last few Events usually name the exact problem."
+    },
+    {
+      "id": "image-pull-auth",
+      "title": "Registry refused access to the image (authentication)",
+      "symptoms": ["ImagePullBackOff", "ErrImagePull"],
+      "signals": [
+        {"source": "pod", "pattern": "ImagePullBackOff|ErrImagePull", "weight": 2, "label": "Pod is stuck pulling its image"},
+        {"source": "events|describe", "pattern": "pull access denied|unauthorized|authentication required|denied: requested access|may require authorization|insufficient_scope|incorrect username or password", "weight": 4, "label": "The registry denied access"},
+        {"source": "describe", "pattern": "Failed to pull image", "weight": 1, "label": "kubelet reported a pull failure"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "The pull error text shows whether the registry said 'unauthorized' or 'not found'."},
+        {"id": "events", "why": "Events confirm the denial is repeated and not a one-off blip."},
+        {"id": "deployment", "why": "Check whether the Deployment already references imagePullSecrets."}
+      ],
+      "plain_language": "The image may well exist, but the registry will not hand it over without credentials. The cluster has no (or wrong) pull credentials for this registry.",
+      "why_it_happens": "Private registry with no imagePullSecret, an expired or wrong credential, or a secret in a different namespace.",
+      "fix": {"kind": "manual", "summary": "Create a registry credential and reference it from the Deployment."},
+      "manual_steps": [
+        "Create a pull secret in the same namespace: kubectl create secret docker-registry regcred --docker-server=<registry> --docker-username=<user> --docker-password=<token> -n <namespace>",
+        "Add 'imagePullSecrets: [{name: regcred}]' to the pod spec of the Deployment.",
+        "The agent does not read or write Secrets, so this step is deliberately manual."
+      ],
+      "learn": "Pull errors say either 'not found' (wrong name/tag) or 'unauthorized/denied' (credentials). Tell them apart before changing anything."
+    },
+    {
+      "id": "image-registry-unreachable",
+      "title": "Cluster cannot reach the image registry (network/DNS)",
+      "symptoms": ["ImagePullBackOff", "ErrImagePull"],
+      "signals": [
+        {"source": "pod", "pattern": "ImagePullBackOff|ErrImagePull", "weight": 2, "label": "Pod is stuck pulling its image"},
+        {"source": "events|describe", "pattern": "i/o timeout|no such host|dial tcp|connection refused|TLS handshake timeout|network is unreachable", "weight": 4, "label": "A network-level error occurred while contacting the registry"},
+        {"source": "describe", "pattern": "Failed to pull image", "weight": 1, "label": "kubelet reported a pull failure"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "The pull error text shows the network failure (timeout, DNS, refused)."},
+        {"id": "events", "why": "Events show whether the failure is constant or intermittent."}
+      ],
+      "plain_language": "The node could not even reach the registry: the request timed out or the hostname did not resolve. The problem is the network, proxy or DNS - not your image.",
+      "why_it_happens": "No internet from the node, a corporate proxy, DNS failure, or a registry outage.",
+      "fix": {"kind": "manual", "summary": "Restore connectivity from the node to the registry."},
+      "manual_steps": ["From the node (for kind: 'docker exec <node> sh'), test the registry host with nslookup/curl.", "For kind/Minikube behind a proxy, configure the proxy for the container runtime.", "For local clusters you can pre-load the image: 'kind load docker-image <image>'."],
+      "learn": "'i/o timeout' and 'no such host' point to networking, not to your YAML."
+    },
+    {
+      "id": "crash-missing-config",
+      "title": "App exits at startup because a required setting is missing",
+      "symptoms": ["CrashLoopBackOff", "Error"],
+      "signals": [
+        {"source": "pod", "pattern": "CrashLoopBackOff|\"Error\"", "weight": 2, "label": "Container keeps crashing and restarting"},
+        {"source": "logs", "pattern": "(required|missing|must be set|not set|undefined|unset)[^\\n]*(environment variable|env var|\\benv\\b|config)|(environment variable|env var)[^\\n]*(required|missing|not set|undefined|unset)", "weight": 5, "label": "The app's own log says a required setting is missing"},
+        {"source": "describe", "pattern": "Exit Code:\\s+1\\b", "weight": 1, "label": "Container exited with code 1 (generic application error)"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "Shows the last exit code, restart count and back-off events."},
+        {"id": "events", "why": "Confirms the restart/back-off pattern over time."},
+        {"id": "logs_previous", "why": "The container restarts, so the log of the PREVIOUS run holds the crash message."},
+        {"id": "deployment", "why": "Read the Deployment's current env so the patch adds only what is missing."}
+      ],
+      "plain_language": "The program started, checked its configuration, found something required missing, and quit on purpose. Kubernetes keeps restarting it, waiting longer each time - that waiting is the 'BackOff' in CrashLoopBackOff.",
+      "why_it_happens": "An environment variable or config value that exists in another environment was never added to this Deployment.",
+      "fix": {
+        "kind": "set_env",
+        "summary": "Add the missing environment variable to the container.",
+        "env_name_patterns": ["(?:environment variable|env var|env)\\s+['\"]?([A-Z][A-Z0-9_]{1,})", "\\b([A-Z][A-Z0-9_]{2,})\\b\\s+(?:is\\s+)?(?:not set|missing|required|undefined|unset)"]
+      },
+      "manual_steps": ["Find out the correct value for the setting from the app's docs or your team - the agent will not guess it.", "Add it under 'env:' (or from a ConfigMap) in the Deployment."],
+      "learn": "For a crash loop, run 'kubectl logs <pod> --previous': plain 'logs' may show the fresh, still-empty restart."
+    },
+    {
+      "id": "crash-bad-command",
+      "title": "Container command or entrypoint cannot run",
+      "symptoms": ["CrashLoopBackOff", "Error", "RunContainerError", "CreateContainerError", "ContainerCannotRun"],
+      "signals": [
+        {"source": "pod", "pattern": "CrashLoopBackOff|RunContainerError|CreateContainerError|\"Error\"", "weight": 2, "label": "Container fails to run"},
+        {"source": "describe", "pattern": "executable file not found|exec format error|no such file or directory|command not found|permission denied", "weight": 3, "label": "The runtime could not execute the configured command"},
+        {"source": "logs", "pattern": "executable file not found|exec format error|no such file or directory|command not found|permission denied", "weight": 3, "label": "The log shows the command could not be executed"},
+        {"source": "describe", "pattern": "Exit Code:\\s+(126|127)\\b", "weight": 2, "label": "Exit code 126/127 means 'cannot execute' / 'command not found'"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "Look for the exact exec error and the exit code (126/127)."},
+        {"id": "events", "why": "Events carry the runtime's error message."},
+        {"id": "logs_previous", "why": "The previous run's output may show the shell's 'not found' message."}
+      ],
+      "plain_language": "The container's start command is wrong: the program is missing from the image, is not executable, or was built for another CPU architecture.",
+      "why_it_happens": "Typo in 'command'/'args', wrong image for the command, or an image built for a different architecture (for example arm64 vs amd64).",
+      "fix": {"kind": "manual", "summary": "Correct the container command or image."},
+      "manual_steps": ["Compare 'command'/'args' in the Deployment with the image's ENTRYPOINT/CMD.", "Run the image locally: docker run --rm <image> <command>."],
+      "learn": "Exit code 127 = command not found, 126 = not executable."
+    },
+    {
+      "id": "crash-generic",
+      "title": "Application crashes at startup (cause not identified)",
+      "fallback": true,
+      "symptoms": ["CrashLoopBackOff", "Error", "NotReady"],
+      "signals": [
+        {"source": "pod", "pattern": "CrashLoopBackOff|\"Error\"", "weight": 2, "label": "Container keeps crashing and restarting"},
+        {"source": "logs", "pattern": "\\b(error|exception|traceback|panic|fatal|segfault|unhandled)\\b", "weight": 2, "label": "The log contains an error message"},
+        {"source": "describe", "pattern": "Exit Code:\\s+[1-9]\\d*", "weight": 1, "label": "Container exited with a non-zero code"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "Shows exit code and restart history."},
+        {"id": "events", "why": "Shows the back-off pattern."},
+        {"id": "logs_previous", "why": "The crash message is in the previous run's log."}
+      ],
+      "plain_language": "The container starts and then exits with an error. The evidence shows that it crashes but not a specific, recognisable reason - so the agent will not guess a fix.",
+      "why_it_happens": "An application bug, a failing dependency (database not reachable), or bad configuration.",
+      "fix": {"kind": "manual", "summary": "Read the application's crash message and fix the cause."},
+      "manual_steps": ["Read the full previous log: kubectl logs <pod> -n <namespace> --previous", "Reproduce locally: docker run --rm <image>", "Check that dependencies (database, other services) are reachable."],
+      "learn": "Start with the last lines of the previous log - they are almost always the crash reason."
+    },
+    {
+      "id": "oom-killed",
+      "title": "Container exceeded its memory limit (OOMKilled)",
+      "symptoms": ["OOMKilled"],
+      "signals": [
+        {"source": "pod", "pattern": "OOMKilled", "weight": 4, "label": "Kubernetes recorded the last exit as OOMKilled"},
+        {"source": "describe", "pattern": "Reason:\\s+OOMKilled", "weight": 3, "label": "'describe' shows the last termination reason OOMKilled"},
+        {"source": "describe", "pattern": "Exit Code:\\s+137", "weight": 2, "label": "Exit code 137 = killed by SIGKILL (the kernel's out-of-memory kill)"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "Shows Last State: Terminated, Reason OOMKilled, exit code 137, and the configured memory limit."},
+        {"id": "events", "why": "Confirms the repeated restarts."},
+        {"id": "logs_previous", "why": "The previous run's log shows what the app was doing when it was killed (often just stops, with no error)."},
+        {"id": "deployment", "why": "Read the current memory limit so the new value can be computed from it."}
+      ],
+      "plain_language": "The container used more memory than its limit allows, so the Linux kernel killed it instantly (exit code 137). There is usually no error message, because the process is killed before it can say anything.",
+      "why_it_happens": "The limit is too low for the real workload, or the app has a memory leak or loads too much data.",
+      "fix": {
+        "kind": "raise_memory_limit",
+        "summary": "Raise the container's memory limit (doubled, capped).",
+        "factor": 2,
+        "max": "4Gi"
+      },
+      "manual_steps": ["Measure real usage with 'kubectl top pod' (needs metrics-server) before choosing a final limit.", "If memory keeps growing, investigate a leak - a bigger limit only delays the kill."],
+      "learn": "Exit code 137 with Reason OOMKilled = memory limit hit. Raising the limit is a fix for 'too small', not for a leak."
+    },
+    {
+      "id": "pending-insufficient-resources",
+      "title": "No node has enough free CPU or memory for the pod",
+      "symptoms": ["Pending"],
+      "signals": [
+        {"source": "events|describe", "pattern": "FailedScheduling", "weight": 2, "label": "The scheduler could not place the pod"},
+        {"source": "events|describe", "pattern": "Insufficient (cpu|memory|ephemeral-storage)", "weight": 5, "label": "Scheduler says a node lacks the requested resources"},
+        {"source": "pod", "pattern": "Unschedulable", "weight": 1, "label": "Pod condition PodScheduled=False (Unschedulable)"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "The Events section carries the scheduler's reason (for example 'Insufficient cpu')."},
+        {"id": "events", "why": "Events list the FailedScheduling message in full."},
+        {"id": "nodes", "why": "Compare the pod's request against what the nodes can actually offer."},
+        {"id": "deployment", "why": "Read the container's current resource requests."}
+      ],
+      "plain_language": "The pod asks for more CPU or memory (its 'request') than any node can provide, so Kubernetes leaves it Pending. Nothing is wrong inside the container - it was never placed anywhere.",
+      "why_it_happens": "A request far larger than the machine (often a unit typo such as 64 cores instead of 64m), or a cluster that is simply full.",
+      "fix": {
+        "kind": "reduce_request",
+        "summary": "Lower the resource request to a size a node can fit.",
+        "cpu_fraction_of_largest_node": 0.1,
+        "memory_fraction_of_largest_node": 0.25,
+        "cpu_floor_millicores": 50
+      },
+      "manual_steps": ["If the request is intentional, add nodes or free capacity instead.", "Check units: '500m' is half a core, '500' is five hundred cores."],
+      "learn": "Requests are what the scheduler reserves; limits are what the kernel enforces. Pending + 'Insufficient cpu' is about requests."
+    },
+    {
+      "id": "pending-scheduling-constraints",
+      "title": "Scheduling rules (taints, selectors, affinity) exclude every node",
+      "symptoms": ["Pending"],
+      "signals": [
+        {"source": "events|describe", "pattern": "FailedScheduling", "weight": 2, "label": "The scheduler could not place the pod"},
+        {"source": "events|describe", "pattern": "untolerated taint|didn't match Pod's node affinity|didn't match pod affinity|didn't match node selector|node\\(s\\) didn't satisfy", "weight": 5, "label": "A taint, selector or affinity rule excludes the nodes"},
+        {"source": "pod", "pattern": "Unschedulable", "weight": 1, "label": "Pod condition PodScheduled=False"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "The scheduler message names which rule failed."},
+        {"id": "events", "why": "Events give the full FailedScheduling message."},
+        {"id": "nodes", "why": "Compare node labels/taints against the pod's requirements."}
+      ],
+      "plain_language": "The pod insists on nodes with certain labels, or nodes carry taints the pod does not tolerate, so no node qualifies.",
+      "why_it_happens": "A nodeSelector/affinity for a label that does not exist, or a tainted node without a matching toleration.",
+      "fix": {"kind": "manual", "summary": "Relax the selector/affinity, add a toleration, or label/untaint a node."},
+      "manual_steps": ["Compare 'kubectl get nodes --show-labels' with the pod's nodeSelector.", "Add a matching toleration or remove the constraint."],
+      "learn": "The FailedScheduling message lists a count per reason, such as '1 node(s) had untolerated taint'."
+    },
+    {
+      "id": "pending-storage",
+      "title": "Pod is waiting for a volume (PersistentVolumeClaim)",
+      "symptoms": ["Pending"],
+      "signals": [
+        {"source": "events|describe", "pattern": "FailedScheduling", "weight": 2, "label": "The scheduler could not place the pod"},
+        {"source": "events|describe", "pattern": "unbound immediate PersistentVolumeClaims|persistentvolumeclaim \"[^\"]*\" not found|pod has unbound", "weight": 5, "label": "The pod's PersistentVolumeClaim is unbound or missing"},
+        {"source": "pod", "pattern": "Unschedulable", "weight": 1, "label": "Pod condition PodScheduled=False"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "Names the PVC the pod is waiting for."},
+        {"id": "events", "why": "Full FailedScheduling message."}
+      ],
+      "plain_language": "The pod needs a disk (PersistentVolumeClaim) that does not exist yet or cannot be provisioned, so it waits.",
+      "why_it_happens": "The PVC was never created, no StorageClass can provision it, or no matching PersistentVolume exists.",
+      "fix": {"kind": "manual", "summary": "Create or fix the PVC / StorageClass."},
+      "manual_steps": ["kubectl get pvc,storageclass -n <namespace>", "Create the missing PVC or fix its storageClassName."],
+      "learn": "'kubectl get pvc' showing Pending means the volume has not been provisioned."
+    },
+    {
+      "id": "config-missing-reference",
+      "title": "Pod references a ConfigMap or Secret that does not exist",
+      "symptoms": ["CreateContainerConfigError", "CreateContainerError"],
+      "signals": [
+        {"source": "pod", "pattern": "CreateContainerConfigError|CreateContainerError", "weight": 2, "label": "Container could not be created"},
+        {"source": "events|describe", "pattern": "(configmap|secret) \"[^\"]+\" not found|couldn't find key", "weight": 5, "label": "A referenced ConfigMap/Secret (or key) is missing"},
+        {"source": "describe", "pattern": "Error:", "weight": 1, "label": "kubelet reported a container creation error"}
+      ],
+      "diagnostics": [
+        {"id": "describe", "why": "The Events name the missing ConfigMap/Secret or key."},
+        {"id": "events", "why": "Events confirm the repeated failure."}
+      ],
+      "plain_language": "The pod points at a ConfigMap or Secret (or a key inside one) that is not in this namespace, so the container cannot even be created.",
+      "why_it_happens": "The object was not applied yet, lives in another namespace, or the key name has a typo.",
+      "fix": {"kind": "manual", "summary": "Create the missing ConfigMap/Secret or correct the reference."},
+      "manual_steps": ["kubectl get configmap -n <namespace>", "Apply the missing object, or fix the name/key in the Deployment.", "The agent never reads Secrets, so check those yourself."],
+      "learn": "CreateContainerConfigError happens before the app runs - so there are no app logs."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+Name:             hungry-batch-84c6f5d7b9-v6m2c
+Namespace:        triage-lab
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=hungry-batch
+                  pod-template-hash=84c6f5d7b9
+Status:           Pending
+IP:
+Controlled By:    ReplicaSet/hungry-batch-84c6f5d7b9
+Containers:
+  batch:
+    Image:      nginx:1.27-alpine
+    Port:       <none>
+    Host Port:  <none>
+    Requests:
+      cpu:        64
+    Environment:  <none>
+Conditions:
+  Type           Status
+  PodScheduled   False
+QoS Class:        Burstable
+Node-Selectors:   <none>
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  2m    default-scheduler  0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod.

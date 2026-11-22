@@ -1,0 +1,7 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY . .
+ENV KUBEDOCTOR_HOST=0.0.0.0 KUBEDOCTOR_PORT=8765
+EXPOSE 8765
+USER nobody
+CMD ["python", "webapp.py"]

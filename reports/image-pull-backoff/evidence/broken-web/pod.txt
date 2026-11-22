@@ -1,0 +1,30 @@
+symptom: ImagePullBackOff
+detail: container 'web' is waiting: ImagePullBackOff (0 restarts)
+{
+ "phase": "Pending",
+ "conditions": [
+  {
+   "type": "PodScheduled",
+   "status": "True"
+  },
+  {
+   "type": "Ready",
+   "status": "False"
+  }
+ ],
+ "containerStatuses": [
+  {
+   "name": "web",
+   "ready": false,
+   "restartCount": 0,
+   "image": "nginx:99.99-definitely-missing",
+   "imageID": "",
+   "state": {
+    "waiting": {
+     "reason": "ImagePullBackOff",
+     "message": "Back-off pulling image \"nginx:99.99-definitely-missing\""
+    }
+   }
+  }
+ ]
+}

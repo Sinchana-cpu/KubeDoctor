@@ -1,0 +1,13 @@
+symptom: Pending
+detail: pod cannot be scheduled: 0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod.
+{
+ "phase": "Pending",
+ "conditions": [
+  {
+   "type": "PodScheduled",
+   "status": "False",
+   "reason": "Unschedulable",
+   "message": "0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod."
+  }
+ ]
+}

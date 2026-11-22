@@ -1,0 +1,50 @@
+Name:             crashy-api-7f9d6c5b8d-q4w8z
+Namespace:        triage-lab
+Priority:         0
+Node:             triage-lab-control-plane/172.18.0.2
+Start Time:       Thu, 19 Nov 2026 10:00:00 +0000
+Labels:           app=crashy-api
+                  pod-template-hash=7f9d6c5b8d
+Status:           Running
+IP:               10.244.0.72
+Controlled By:    ReplicaSet/crashy-api-7f9d6c5b8d
+Containers:
+  api:
+    Container ID:  containerd://3f1c2a9b7e
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      echo "crashy-api starting"; if [ -z "$APP_MODE" ]; then echo "FATAL: required environment variable APP_MODE is not set"; exit 1; fi; echo "running in $APP_MODE mode"; sleep 3600
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Thu, 19 Nov 2026 10:04:12 +0000
+      Finished:     Thu, 19 Nov 2026 10:04:12 +0000
+    Ready:          False
+    Restart Count:  5
+    Environment:    <none>
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+QoS Class:        Burstable
+Node-Selectors:   <none>
+Tolerations:      node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                  node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                  From               Message
+  ----     ------     ----                 ----               -------
+  Normal   Scheduled  5m                   default-scheduler  Successfully assigned triage-lab/crashy-api-7f9d6c5b8d-q4w8z to triage-lab-control-plane
+  Normal   Pulled     2m (x5 over 5m)      kubelet            Container image "busybox:1.36" already present on machine
+  Normal   Created    2m (x5 over 5m)      kubelet            Created container api
+  Normal   Started    2m (x5 over 5m)      kubelet            Started container api
+  Warning  BackOff    10s (x22 over 5m)    kubelet            Back-off restarting failed container api in pod crashy-api-7f9d6c5b8d-q4w8z_triage-lab(7c1d)
+

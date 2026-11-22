@@ -1,0 +1,16 @@
+{
+  "scenario": "oomkilled",
+  "description": "A worker uses more memory than its 100Mi limit (OOMKilled).",
+  "context": "recorded-fixture (no live cluster)",
+  "namespace": "triage-lab",
+  "commands": {
+    "get pods -n triage-lab -o json": "before/pods.json",
+    "get pods -A -o json": "before/pods.json",
+    "get nodes -o json": "before/nodes.json",
+    "describe pod leaky-worker-5c7d9b6f44-n8x5t -n triage-lab": "before/describe-leaky-worker.txt",
+    "get events -n triage-lab --field-selector involvedObject.name=leaky-worker-5c7d9b6f44-n8x5t --sort-by=.lastTimestamp": "before/events-leaky-worker.txt",
+    "logs leaky-worker-5c7d9b6f44-n8x5t -n triage-lab -c worker --tail=50 --previous": "before/logs-leaky-worker.txt",
+    "get deployment leaky-worker -n triage-lab -o json": "before/deployment-leaky-worker.json",
+    "get pods -n triage-lab -l app=leaky-worker -o json": "before/selector-leaky-worker.json"
+  }
+}

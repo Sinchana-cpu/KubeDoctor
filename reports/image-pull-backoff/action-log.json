@@ -1,0 +1,172 @@
+{
+  "schema": "k8s-triage-action-log/2",
+  "tool_version": "2.0.0",
+  "started": "2026-11-19T12:42:40+00:00",
+  "finished": "2026-11-19T12:42:40+00:00",
+  "mode": "replay",
+  "scenario": "image-pull-backoff",
+  "context": "recorded-fixture (no live cluster)",
+  "namespace": "triage-lab",
+  "safety": {
+    "read_only_verbs": [
+      "describe",
+      "get",
+      "logs",
+      "top",
+      "rollout status",
+      "rollout history"
+    ],
+    "secrets_never_read": true,
+    "only_mutation": "kubectl patch deployment (server dry run first, then only after approval)"
+  },
+  "summary": {
+    "pods_seen": 1,
+    "unhealthy_workloads": 1,
+    "read_commands": 4,
+    "mutations": 0,
+    "recovered": 0
+  },
+  "workloads": [
+    {
+      "workload": "triage-lab/broken-web",
+      "symptom": "ImagePullBackOff",
+      "runbook_rule": "image-not-found",
+      "confidence": "High",
+      "patch_file": "proposed-fixes/broken-web.yaml",
+      "approval": "not applicable - recorded mode never applies patches",
+      "patch_applied": false,
+      "verification": "not run",
+      "outcome": "Fix proposed (not applied)"
+    }
+  ],
+  "entries": [
+    {
+      "seq": 1,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "start",
+      "kind": "info",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "Triage of namespace 'triage-lab'; read-only diagnostics, mutations only after approval.",
+      "exit_code": null,
+      "result": "context=recorded-fixture (no live cluster); evidence source=recorded-fixture"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "-",
+      "command": "kubectl get pods -n triage-lab -o json",
+      "rationale": "Find pods that are not healthy by reading every pod's status.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "c1dc130353e974def3284577fbd861cf0b67bb3e1a62ebe2af2f82ca6dcddcf8",
+      "output_excerpt": "{\n  \"apiVersion\": \"v1\",\n  \"kind\": \"List\",\n  \"items\": [\n    {\n      \"apiVersion\": \"v1\",\n      \"kind\": \"Pod\",\n      \"metadata\": {\n        \"name\": \"broken-web-6b8b94c6f7-xk2qp\",\n        \"namespace\": \"triage-lab\",\n        \"creationTimestamp\": \"2026-11-19T10:00:00Z\",\n        \"labels\": {\n          \"app\": \"broken-web\",\n          \"pod-template-hash\": \"6b8b94c6f7\"\n        },\n        \"ownerReferences\": [\n  "
+    },
+    {
+      "seq": 3,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "1 pod(s) read; 1 unhealthy workload(s) found.",
+      "exit_code": null,
+      "result": "triage-lab/broken-web=ImagePullBackOff"
+    },
+    {
+      "seq": 4,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/broken-web",
+      "command": "kubectl describe pod broken-web-6b8b94c6f7-xk2qp -n triage-lab",
+      "rationale": "'describe' is the richest single view of a pod: status, last exit code, resource limits and its Events.",
+      "exit_code": 0,
+      "result": "ok: Name:             broken-web-6b8b94c6f7-xk2qp",
+      "output_sha256": "e5935319c8b4c7b44401193bf7eb4e41e1d6ae9ac4ef4add957e53878ce92669",
+      "output_excerpt": "Name:             broken-web-6b8b94c6f7-xk2qp\nNamespace:        triage-lab\nPriority:         0\nNode:             triage-lab-control-plane/172.18.0.2\nStart Time:       Thu, 19 Nov 2026 10:00:00 +0000\nLabels:           app=broken-web\n                  pod-template-hash=6b8b94c6f7\nStatus:           Pending\nIP:               10.244.0.122\nControlled By:    ReplicaSet/broken-web-6b8b94c6f7\nContainers:\n "
+    },
+    {
+      "seq": 5,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/broken-web",
+      "command": "kubectl get events -n triage-lab --field-selector involvedObject.name=broken-web-6b8b94c6f7-xk2qp --sort-by=.lastTimestamp",
+      "rationale": "Events show what the cluster itself observed (scheduling, pulling, restarting) in time order.",
+      "exit_code": 0,
+      "result": "ok: LAST SEEN   TYPE      REASON      OBJECT                                MESSAGE",
+      "output_sha256": "543300b3dfaa9905772b39124a19b7d7727229e2a3f26eb96ae70d572919015c",
+      "output_excerpt": "LAST SEEN   TYPE      REASON      OBJECT                                MESSAGE\n3m          Normal    Scheduled   pod/broken-web-6b8b94c6f7-xk2qp   Successfully assigned triage-lab/broken-web-6b8b94c6f7-xk2qp to triage-lab-control-plane\n77s         Warning   Failed      pod/broken-web-6b8b94c6f7-xk2qp   Failed to pull image \"nginx:99.99-definitely-missing\": rpc error: code = NotFound desc = failed"
+    },
+    {
+      "seq": 6,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/broken-web",
+      "command": "",
+      "rationale": "Leading hypothesis: image-not-found (7/7). Next check: deployment.",
+      "exit_code": null,
+      "result": ""
+    },
+    {
+      "seq": 7,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/broken-web",
+      "command": "kubectl get deployment broken-web -n triage-lab -o json",
+      "rationale": "Read the owning Deployment so a patch can be drafted against its real container spec.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "ff37583c546a980bae3a1b565ff455c9e8f9819085ac3423a13bce8e10197d38",
+      "output_excerpt": "{\n  \"apiVersion\": \"apps/v1\",\n  \"kind\": \"Deployment\",\n  \"metadata\": {\n    \"name\": \"broken-web\",\n    \"namespace\": \"triage-lab\"\n  },\n  \"spec\": {\n    \"replicas\": 1,\n    \"selector\": {\n      \"matchLabels\": {\n        \"app\": \"broken-web\"\n      }\n    },\n    \"template\": {\n      \"metadata\": {\n        \"labels\": {\n          \"app\": \"broken-web\"\n        }\n      },\n      \"spec\": {\n        \"containers\": [\n        "
+    },
+    {
+      "seq": 8,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "diagnose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/broken-web",
+      "command": "",
+      "rationale": "Matched runbook rule 'image-not-found' (score 7/7, confidence High).",
+      "exit_code": null,
+      "result": "Image or tag does not exist in the registry"
+    },
+    {
+      "seq": 9,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/broken-web",
+      "command": "",
+      "rationale": "Point the Deployment at an image tag that exists.",
+      "exit_code": null,
+      "result": "container 'web' image: nginx:99.99-definitely-missing -> nginx:1.27-alpine"
+    },
+    {
+      "seq": 10,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/broken-web",
+      "command": "",
+      "rationale": "Recorded mode: patch is shown for review only; no cluster exists to change.",
+      "exit_code": null,
+      "result": ""
+    }
+  ]
+}

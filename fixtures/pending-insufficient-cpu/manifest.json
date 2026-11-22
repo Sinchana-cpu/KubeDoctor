@@ -1,0 +1,15 @@
+{
+  "scenario": "pending-insufficient-cpu",
+  "description": "A pod requests 64 CPU cores; no node can fit it (Pending).",
+  "context": "recorded-fixture (no live cluster)",
+  "namespace": "triage-lab",
+  "commands": {
+    "get pods -n triage-lab -o json": "before/pods.json",
+    "get pods -A -o json": "before/pods.json",
+    "get nodes -o json": "before/nodes.json",
+    "describe pod hungry-batch-84c6f5d7b9-v6m2c -n triage-lab": "before/describe-hungry-batch.txt",
+    "get events -n triage-lab --field-selector involvedObject.name=hungry-batch-84c6f5d7b9-v6m2c --sort-by=.lastTimestamp": "before/events-hungry-batch.txt",
+    "get deployment hungry-batch -n triage-lab -o json": "before/deployment-hungry-batch.json",
+    "get pods -n triage-lab -l app=hungry-batch -o json": "before/selector-hungry-batch.json"
+  }
+}

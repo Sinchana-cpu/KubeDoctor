@@ -1,0 +1,198 @@
+{
+  "schema": "k8s-triage-action-log/2",
+  "tool_version": "2.0.0",
+  "started": "2026-11-19T12:42:40+00:00",
+  "finished": "2026-11-19T12:42:40+00:00",
+  "mode": "replay",
+  "scenario": "pending-insufficient-cpu",
+  "context": "recorded-fixture (no live cluster)",
+  "namespace": "triage-lab",
+  "safety": {
+    "read_only_verbs": [
+      "describe",
+      "get",
+      "logs",
+      "top",
+      "rollout status",
+      "rollout history"
+    ],
+    "secrets_never_read": true,
+    "only_mutation": "kubectl patch deployment (server dry run first, then only after approval)"
+  },
+  "summary": {
+    "pods_seen": 1,
+    "unhealthy_workloads": 1,
+    "read_commands": 5,
+    "mutations": 0,
+    "recovered": 0
+  },
+  "workloads": [
+    {
+      "workload": "triage-lab/hungry-batch",
+      "symptom": "Pending",
+      "runbook_rule": "pending-insufficient-resources",
+      "confidence": "High",
+      "patch_file": "proposed-fixes/hungry-batch.yaml",
+      "approval": "not applicable - recorded mode never applies patches",
+      "patch_applied": false,
+      "verification": "not run",
+      "outcome": "Fix proposed (not applied)"
+    }
+  ],
+  "entries": [
+    {
+      "seq": 1,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "start",
+      "kind": "info",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "Triage of namespace 'triage-lab'; read-only diagnostics, mutations only after approval.",
+      "exit_code": null,
+      "result": "context=recorded-fixture (no live cluster); evidence source=recorded-fixture"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "-",
+      "command": "kubectl get pods -n triage-lab -o json",
+      "rationale": "Find pods that are not healthy by reading every pod's status.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "364583db26e951eba85221f033d4649e8885d7ded0198088ee94575067c5de43",
+      "output_excerpt": "{\n  \"apiVersion\": \"v1\",\n  \"kind\": \"List\",\n  \"items\": [\n    {\n      \"apiVersion\": \"v1\",\n      \"kind\": \"Pod\",\n      \"metadata\": {\n        \"name\": \"hungry-batch-84c6f5d7b9-v6m2c\",\n        \"namespace\": \"triage-lab\",\n        \"creationTimestamp\": \"2026-11-19T10:00:00Z\",\n        \"labels\": {\n          \"app\": \"hungry-batch\",\n          \"pod-template-hash\": \"84c6f5d7b9\"\n        },\n        \"ownerReferences\": "
+    },
+    {
+      "seq": 3,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "detect",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "-",
+      "command": "",
+      "rationale": "1 pod(s) read; 1 unhealthy workload(s) found.",
+      "exit_code": null,
+      "result": "triage-lab/hungry-batch=Pending"
+    },
+    {
+      "seq": 4,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/hungry-batch",
+      "command": "kubectl describe pod hungry-batch-84c6f5d7b9-v6m2c -n triage-lab",
+      "rationale": "'describe' is the richest single view of a pod: status, last exit code, resource limits and its Events.",
+      "exit_code": 0,
+      "result": "ok: Name:             hungry-batch-84c6f5d7b9-v6m2c",
+      "output_sha256": "aaa112874cbc116844d34ad003caaab757f29331a47a28f96b544dad9bd0c159",
+      "output_excerpt": "Name:             hungry-batch-84c6f5d7b9-v6m2c\nNamespace:        triage-lab\nPriority:         0\nService Account:  default\nNode:             <none>\nLabels:           app=hungry-batch\n                  pod-template-hash=84c6f5d7b9\nStatus:           Pending\nIP:\nControlled By:    ReplicaSet/hungry-batch-84c6f5d7b9\nContainers:\n  batch:\n    Image:      nginx:1.27-alpine\n    Port:       <none>\n    Host "
+    },
+    {
+      "seq": 5,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/hungry-batch",
+      "command": "kubectl get events -n triage-lab --field-selector involvedObject.name=hungry-batch-84c6f5d7b9-v6m2c --sort-by=.lastTimestamp",
+      "rationale": "Events show what the cluster itself observed (scheduling, pulling, restarting) in time order.",
+      "exit_code": 0,
+      "result": "ok: LAST SEEN   TYPE      REASON             OBJECT                         MESSAGE",
+      "output_sha256": "a5a65fda24be459091349ead4a781feec9ea18324add0434535b1930d6ed12bb",
+      "output_excerpt": "LAST SEEN   TYPE      REASON             OBJECT                         MESSAGE\n2m          Warning   FailedScheduling   pod/hungry-batch-84c6f5d7b9-v6m2c   0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod."
+    },
+    {
+      "seq": 6,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/hungry-batch",
+      "command": "",
+      "rationale": "Leading hypothesis: pending-insufficient-resources (8/8). Next check: nodes.",
+      "exit_code": null,
+      "result": ""
+    },
+    {
+      "seq": 7,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/hungry-batch",
+      "command": "kubectl get nodes -o json",
+      "rationale": "Compare the pod's request against what the nodes can actually offer.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "ab137c3f9e5ef33cd03e9f98b9229d7178e5662fa56c592ae9f3821fa2d72ec4",
+      "output_excerpt": "{\n  \"apiVersion\": \"v1\",\n  \"kind\": \"List\",\n  \"items\": [\n    {\n      \"metadata\": {\n        \"name\": \"triage-lab-control-plane\"\n      },\n      \"status\": {\n        \"allocatable\": {\n          \"cpu\": \"8\",\n          \"memory\": \"16254636Ki\",\n          \"pods\": \"110\"\n        },\n        \"conditions\": [\n          {\n            \"type\": \"Ready\",\n            \"status\": \"True\"\n          }\n        ]\n      }\n    }\n  ]"
+    },
+    {
+      "seq": 8,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/hungry-batch",
+      "command": "",
+      "rationale": "Leading hypothesis: pending-insufficient-resources (8/8). Next check: deployment.",
+      "exit_code": null,
+      "result": ""
+    },
+    {
+      "seq": 9,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "investigate",
+      "kind": "read",
+      "source": "recorded-fixture",
+      "workload": "triage-lab/hungry-batch",
+      "command": "kubectl get deployment hungry-batch -n triage-lab -o json",
+      "rationale": "Read the container's current resource requests.",
+      "exit_code": 0,
+      "result": "ok: {",
+      "output_sha256": "010dc4c963d4d17e3d715dd92da3effcedcefd94e72db91e3d956e6083dc114b",
+      "output_excerpt": "{\n  \"apiVersion\": \"apps/v1\",\n  \"kind\": \"Deployment\",\n  \"metadata\": {\n    \"name\": \"hungry-batch\",\n    \"namespace\": \"triage-lab\"\n  },\n  \"spec\": {\n    \"replicas\": 1,\n    \"selector\": {\n      \"matchLabels\": {\n        \"app\": \"hungry-batch\"\n      }\n    },\n    \"template\": {\n      \"metadata\": {\n        \"labels\": {\n          \"app\": \"hungry-batch\"\n        }\n      },\n      \"spec\": {\n        \"containers\": [\n  "
+    },
+    {
+      "seq": 10,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "diagnose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/hungry-batch",
+      "command": "",
+      "rationale": "Matched runbook rule 'pending-insufficient-resources' (score 8/8, confidence High).",
+      "exit_code": null,
+      "result": "No node has enough free CPU or memory for the pod"
+    },
+    {
+      "seq": 11,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/hungry-batch",
+      "command": "",
+      "rationale": "Lower the resource request to a size a node can fit.",
+      "exit_code": null,
+      "result": "container 'batch' resources.requests.cpu: 64 -> 800m"
+    },
+    {
+      "seq": 12,
+      "ts": "2026-11-19T12:42:40+00:00",
+      "phase": "propose",
+      "kind": "decision",
+      "source": "agent",
+      "workload": "triage-lab/hungry-batch",
+      "command": "",
+      "rationale": "Recorded mode: patch is shown for review only; no cluster exists to change.",
+      "exit_code": null,
+      "result": ""
+    }
+  ]
+}

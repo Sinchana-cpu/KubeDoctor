@@ -1,0 +1,59 @@
+Name:             leaky-worker-5c7d9b6f44-n8x5t
+Namespace:        triage-lab
+Priority:         0
+Node:             triage-lab-control-plane/172.18.0.2
+Start Time:       Thu, 19 Nov 2026 10:00:00 +0000
+Labels:           app=leaky-worker
+                  pod-template-hash=5c7d9b6f44
+Status:           Running
+IP:               10.244.0.176
+Controlled By:    ReplicaSet/leaky-worker-5c7d9b6f44
+Containers:
+  worker:
+    Container ID:  containerd://a91be44c20
+    Image:         polinux/stress
+    Image ID:      docker.io/polinux/stress@sha256:b6144f84f9c15dac80deb48d3a646b55c7043ab1d83ea0a697c09097aaad21aa
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      stress
+    Args:
+      --vm
+      1
+      --vm-bytes
+      150M
+      --vm-hang
+      1
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       OOMKilled
+      Exit Code:    137
+      Started:      Thu, 19 Nov 2026 10:05:01 +0000
+      Finished:     Thu, 19 Nov 2026 10:05:02 +0000
+    Ready:          False
+    Restart Count:  4
+    Limits:
+      memory:  100Mi
+    Requests:
+      memory:     50Mi
+    Environment:  <none>
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+QoS Class:        Burstable
+Node-Selectors:   <none>
+Tolerations:      node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                  node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                 From               Message
+  ----     ------     ----                ----               -------
+  Normal   Scheduled  4m                  default-scheduler  Successfully assigned triage-lab/leaky-worker-5c7d9b6f44-n8x5t to triage-lab-control-plane
+  Normal   Pulled     90s (x5 over 4m)    kubelet            Container image "polinux/stress" already present on machine
+  Normal   Created    90s (x5 over 4m)    kubelet            Created container worker
+  Normal   Started    90s (x5 over 4m)    kubelet            Started container worker
+  Warning  BackOff    8s (x18 over 4m)    kubelet            Back-off restarting failed container worker in pod leaky-worker-5c7d9b6f44-n8x5t_triage-lab(2b9e)
+
